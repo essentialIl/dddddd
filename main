@@ -1,0 +1,603 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/essentialIl/dddddd/refs/heads/main/d"))()
+local Window = Library:CreateWindow("2026 paste this cannot be real 😭😭✡️✡️💵💵", Vector2.new(492, 598), Enum.KeyCode.RightControl)
+
+local function formatNumber(n)
+    local str = tostring(n)
+    local tier, val = str:match("^(%d+);(.+)$")
+    if tier and val then
+        tier = tonumber(tier)
+        val = tonumber(val)
+        if tier == 0 then
+            n = val
+        else
+            local suffixes = {"K", "M", "B", "T", "QD", "QN", "SX", "SP", "OC", "NO", "DC"}
+            local decimals = val % 3
+            local group = math.floor(val / 3)
+            local display = string.format("%.2f", 10 ^ decimals)
+            if suffixes[group] then
+                return display .. suffixes[group]
+            else
+                return "e" .. string.format("%.1f", val)
+            end
+        end
+    end
+    local num = tonumber(n)
+    if not num then return tostring(n) end
+    local suffixes = {
+        {1e33, "DC"}, {1e30, "NO"}, {1e27, "OC"}, {1e24, "SP"},
+        {1e21, "SX"}, {1e18, "QN"}, {1e15, "QD"}, {1e12, "T"},
+        {1e9, "B"}, {1e6, "M"}, {1e3, "K"},
+    }
+    for _, suffix in pairs(suffixes) do
+        if math.abs(num) >= suffix[1] then
+            return string.format("%.2f%s", num / suffix[1], suffix[2])
+        end
+    end
+    return tostring(math.floor(num))
+end
+
+-- Tab 1
+local AimingTab = Window:CreateTab("Tab 1")
+local testSection = AimingTab:CreateSector("Automation 👿🙅‍♂️⛏️", "left")
+
+local autoRollActive = false
+local autoYatzyActive = false
+local autoFlipActive = false
+local autoQuirkActive = false
+local autoClickActive = false
+local autoGlyphActive = false
+local rollDelay = 1
+local touchActive = false
+local touchConnection = nil
+
+testSection:AddSlider("Roll Delay (seconds)", 0, 20, 10, 1, function(value)
+    rollDelay = value / 10
+end)
+
+testSection:AddToggle("Auto Roll", false, function(state)
+    autoRollActive = state
+    if autoRollActive then
+        task.spawn(function()
+            while autoRollActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Roll"):FireServer()
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Yatzy Roll", false, function(state)
+    autoYatzyActive = state
+    if autoYatzyActive then
+        task.spawn(function()
+            while autoYatzyActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("YatzyRoll"):FireServer()
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Silver Flip", false, function(state)
+    autoFlipActive = state
+    if autoFlipActive then
+        task.spawn(function()
+            while autoFlipActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CoinFlip"):FireServer()
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Quirk Roll", false, function(state)
+    autoQuirkActive = state
+    if autoQuirkActive then
+        task.spawn(function()
+            while autoQuirkActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RollQuirk"):InvokeServer("Roll", "Rarities")
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Click", false, function(state)
+    autoClickActive = state
+    if autoClickActive then
+        task.spawn(function()
+            while autoClickActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Click"):FireServer(1)
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Glyph", false, function(state)
+    autoGlyphActive = state
+    if autoGlyphActive then
+        task.spawn(function()
+            while autoGlyphActive do
+                game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("RollGlyph"):InvokeServer()
+                task.wait(rollDelay)
+            end
+        end)
+    end
+end)
+
+testSection:AddToggle("Auto Energy Pad", false, function(state)
+    touchActive = state
+    if touchActive then
+        local character = game.Players.LocalPlayer.Character
+        local hrp = character and character:FindFirstChild("HumanoidRootPart")
+        local button = workspace:WaitForChild("Boards"):WaitForChild("Energy"):WaitForChild("Energy Pad"):WaitForChild("Button")
+        if not hrp or not button then return end
+        touchConnection = game:GetService("RunService").Heartbeat:Connect(function()
+            if not touchActive then
+                touchConnection:Disconnect()
+                touchConnection = nil
+                return
+            end
+            hrp.CFrame = button.CFrame + Vector3.new(0, 3, 0)
+        end)
+    else
+        if touchConnection then
+            touchConnection:Disconnect()
+            touchConnection = nil
+        end
+    end
+end)
+
+local rebirthSection = AimingTab:CreateSector("Auto Rebirth 🔄", "right")
+local rebirthTypes = {"Prestige", "Ascension", "Transcension", "Overroll", "Crystallize"}
+local rebirthActive = {}
+
+for _, rebirthType in pairs(rebirthTypes) do
+    rebirthActive[rebirthType] = false
+    rebirthSection:AddToggle("Auto " .. rebirthType, false, function(state)
+        rebirthActive[rebirthType] = state
+        if state then
+            task.spawn(function()
+                while rebirthActive[rebirthType] do
+                    local args = {rebirthType}
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Reset"):FireServer(unpack(args))
+                    task.wait(1)
+                end
+            end)
+        end
+    end)
+end
+
+local deleteSection = AimingTab:CreateSector("Other", "right")
+deleteSection:AddButton("Delete UI", function()
+    autoRollActive = false
+    autoYatzyActive = false
+    autoFlipActive = false
+    autoQuirkActive = false
+    autoClickActive = false
+    autoGlyphActive = false
+    touchActive = false
+    if touchConnection then
+        touchConnection:Disconnect()
+        touchConnection = nil
+    end
+    for _, rebirthType in pairs(rebirthTypes) do
+        rebirthActive[rebirthType] = false
+    end
+    Window.Main:Destroy()
+end)
+
+-- Tab 2
+local UpgradeTab = Window:CreateTab("Upgrades")
+local upgradeAmount = "1"
+local useMax = false
+
+local function fireUpgrade(arg1, arg3)
+    local args = {arg1, upgradeAmount, arg3[1], arg3[2]}
+    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Upgrade"):FireServer(unpack(args))
+end
+
+local function createUpgradeSection(tab, autoName, manualName, upgrades, currency)
+    local autoActive = {}
+    local autoSection = tab:CreateSector(autoName, "left")
+    autoSection:AddToggle("Max Upgrade", false, function(state)
+        useMax = state
+        upgradeAmount = state and "Max" or "1"
+    end)
+    for _, upgrade in pairs(upgrades) do
+        autoActive[upgrade.arg] = false
+        autoSection:AddToggle("Auto " .. upgrade.name, false, function(state)
+            autoActive[upgrade.arg] = state
+            if state then
+                task.spawn(function()
+                    while autoActive[upgrade.arg] do
+                        fireUpgrade(upgrade.arg, currency)
+                        task.wait(1)
+                    end
+                end)
+            end
+        end)
+    end
+    local manualSection = tab:CreateSector(manualName, "right")
+    manualSection:AddToggle("Max Upgrade", false, function(state)
+        useMax = state
+        upgradeAmount = state and "Max" or "1"
+    end)
+    for _, upgrade in pairs(upgrades) do
+        manualSection:AddButton(upgrade.name, function()
+            fireUpgrade(upgrade.arg, currency)
+        end)
+    end
+end
+
+createUpgradeSection(UpgradeTab,
+    "Auto Coin Upgrades 💰", "Manual Coin Upgrades 💰",
+    {
+        {name = "Coin Gain", arg = "Coin Gain"},
+        {name = "Coin Multi", arg = "Coin Multi"},
+        {name = "Max Roll", arg = "Max Roll"},
+    },
+    {"Coins", "Coins"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Prestige Upgrades ⭐", "Manual Prestige Upgrades ⭐",
+    {
+        {name = "Coin Multi", arg = "Coin Multi II"},
+        {name = "XP Multi", arg = "PP XP Multi"},
+        {name = "Max Roll", arg = "Max Roll II"},
+        {name = "Min Roll", arg = "Min Roll"},
+        {name = "Extra Dice", arg = "Extra Dice"},
+        {name = "Walkspeed", arg = "Walkspeed"},
+    },
+    {"PP", "Prestige Points"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Ascension Upgrades 🌟", "Manual Ascension Upgrades 🌟",
+    {
+        {name = "Coin Multi", arg = "Coin Multi III"},
+        {name = "PP Multi", arg = "PP Multi"},
+        {name = "XP Multi", arg = "XP Multi"},
+        {name = "Max Roll", arg = "Max Roll III"},
+        {name = "Min Roll", arg = "Min Roll II"},
+        {name = "Extra Dice", arg = "Extra Dice II"},
+    },
+    {"AP", "Ascension Points"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Transcension Upgrades 💫", "Manual Transcension Upgrades 💫",
+    {
+        {name = "Coin Multi", arg = "Coin Multi IV"},
+        {name = "PP Multi", arg = "PP Multi II"},
+        {name = "AP Multi", arg = "AP Multi"},
+        {name = "Max Roll", arg = "Max Roll IV"},
+        {name = "Min Roll", arg = "Min Roll III"},
+        {name = "Extra Dice", arg = "Extra Dice III"},
+        {name = "Rune Luck", arg = "Rune Luck"},
+        {name = "Rune Bulk", arg = "Rune Bulk"},
+        {name = "Rune Speed", arg = "Rune Speed"},
+        {name = "Keep Levels", arg = "Keep Levels"},
+    },
+    {"TP", "Transcension Points"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Energy Upgrades ⚡", "Manual Energy Upgrades ⚡",
+    {
+        {name = "Energy Gain", arg = "Energy Gain"},
+        {name = "Energy Multi", arg = "Energy Multi"},
+        {name = "Faster Energy", arg = "Faster Energy"},
+    },
+    {"Energy", "Energy"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Stars Upgrades ⭐", "Manual Stars Upgrades ⭐",
+    {
+        {name = "Star Coin Multi", arg = "Star Coin Multi"},
+        {name = "Star Max Roll", arg = "Star Max Roll"},
+        {name = "Star Min Roll", arg = "Star Min Roll"},
+        {name = "Star Extra Dice", arg = "Star Extra Dice"},
+        {name = "Star Mega Chance", arg = "Star Mega Chance"},
+        {name = "Star Giga Chance", arg = "Star Giga Chance"},
+        {name = "Star Colossal Chance", arg = "Star Colossal Chance"},
+        {name = "Star Variant Luck", arg = "Star Variant Luck"},
+    },
+    {"Stars", "Stars"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Time Upgrades ⏱️", "Manual Time Upgrades ⏱️",
+    {
+        {name = "Time Gain", arg = "Time Gain"},
+        {name = "Turbo Time", arg = "Turbo Time"},
+        {name = "Rune Luck II", arg = "Rune Luck II"},
+        {name = "Rune Bulk II", arg = "Rune Bulk II"},
+        {name = "Rune Speed II", arg = "Rune Speed II"},
+        {name = "Unlock Area 2", arg = "Unlock Area 2"},
+    },
+    {"Time", "Eons of Time"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Crystal Upgrades 💎", "Manual Crystal Upgrades 💎",
+    {
+        {name = "Coin Multi V", arg = "Coin Multi V"},
+        {name = "Time Gain II", arg = "Time Gain II"},
+        {name = "Energy Gain II", arg = "Energy Gain II"},
+        {name = "Energy Multi II", arg = "Energy Multi II"},
+        {name = "Variant Luck", arg = "Variant Luck"},
+        {name = "Rune Luck III", arg = "Rune Luck III"},
+        {name = "Unlock Glyphs", arg = "Unlock Glyphs"},
+    },
+    {"Crystals", "Crystals"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Clicks Upgrades 🖱️", "Manual Clicks Upgrades 🖱️",
+    {
+        {name = "Click Gain", arg = "Click Gain"},
+        {name = "Click Multi", arg = "Click Multi"},
+        {name = "Faster Clicks", arg = "Faster Clicks"},
+        {name = "Golden Clicks", arg = "Golden Clicks"},
+        {name = "Variant Luck II", arg = "Variant Luck II"},
+        {name = "Giga Luck", arg = "Giga Luck"},
+        {name = "Colossal Luck", arg = "Colossal Luck"},
+        {name = "Glyph Luck", arg = "Glyph Luck"},
+    },
+    {"Clicks", "Clicks"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Jade Upgrades 🟢", "Manual Jade Upgrades 🟢",
+    {
+        {name = "Max Roll V", arg = "Max Roll V"},
+        {name = "Min Roll IV", arg = "Min Roll IV"},
+        {name = "Extra Dice IV", arg = "Extra Dice IV"},
+        {name = "Roll Speed", arg = "Roll Speed"},
+        {name = "XP III", arg = "XP III"},
+        {name = "More Tempo", arg = "More Tempo"},
+        {name = "Rune Luck IV", arg = "Rune Luck IV"},
+        {name = "Rune Clone", arg = "Rune Clone"},
+        {name = "Jade More Essence", arg = "Jade More Essence"},
+    },
+    {"Jade", "Jade"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Essence Upgrades ✨", "Manual Essence Upgrades ✨",
+    {
+        {name = "More Essence", arg = "More Essence"},
+        {name = "More Crystals", arg = "More Crystals"},
+        {name = "More Jade", arg = "More Jade"},
+    },
+    {"Essence", "Essence"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Rarities Upgrades 🎲", "Manual Rarities Upgrades 🎲",
+    {
+        {name = "Rarity Luck", arg = "Rarity Luck"},
+        {name = "Rarity Bulk", arg = "Rarity Bulk"},
+        {name = "Rarity Speed", arg = "Rarity Speed"},
+    },
+    {"Rarities", "Rarities"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Crown Upgrades 👑", "Manual Crown Upgrades 👑",
+    {
+        {name = "Crown Gain", arg = "Crown Gain"},
+        {name = "Crown Multi", arg = "Crown Multi"},
+        {name = "Faster Crowns", arg = "Faster Crowns"},
+        {name = "Essence Multi", arg = "Essence Multi"},
+        {name = "Rarity Luck II", arg = "Rarity Luck II"},
+        {name = "Rarity Bulk II", arg = "Rarity Bulk II"},
+        {name = "Rune Luck V", arg = "Rune Luck V"},
+        {name = "Max Roll VI", arg = "Max Roll VI"},
+        {name = "Min Roll V", arg = "Min Roll V"},
+        {name = "Extra Dice V", arg = "Extra Dice V"},
+        {name = "Walkspeed II", arg = "Walkspeed II"},
+        {name = "Gargantuan Luck", arg = "Gargantuan Luck"},
+        {name = "Titanic Luck", arg = "Titanic Luck"},
+    },
+    {"Crowns", "Crowns"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Cash Upgrades 💵", "Manual Cash Upgrades 💵",
+    {
+        {name = "More Cash", arg = "More Cash"},
+        {name = "Yatzy Rolls", arg = "Yatzy Rolls"},
+        {name = "Combo Multi", arg = "Combo Multi"},
+        {name = "Coin Multi VI", arg = "Coin Multi VI"},
+        {name = "Crowns Multi", arg = "Crowns Multi"},
+        {name = "Rarity Luck III", arg = "Rarity Luck III"},
+        {name = "Unlock Quirks", arg = "Unlock 'Quirks'"},
+    },
+    {"Cash", "Cash"}
+)
+createUpgradeSection(UpgradeTab,
+    "Auto Silver Upgrades 🥈", "Manual Silver Upgrades 🥈",
+    {
+        {name = "More Silver", arg = "More Silver"},
+        {name = "More Cash II", arg = "More Cash II"},
+        {name = "Lucky Flips", arg = "Lucky Flips"},
+        {name = "More Flips", arg = "More Flips"},
+        {name = "Coin Luck", arg = "Coin Luck"},
+        {name = "Variant Luck III", arg = "Variant Luck III"},
+        {name = "Yatzy Rolls II", arg = "Yatzy Rolls II"},
+        {name = "Quirk Luck", arg = "Quirk Luck"},
+        {name = "Quirk Bulk", arg = "Quirk Bulk"},
+        {name = "Dice Count", arg = "Dice Count"},
+    },
+    {"Silver", "Silver"}
+)
+
+-- Tab 3
+local AchievementTab = Window:CreateTab("Achievements")
+
+local achievements = {
+    "Roller", "Prospector", "Consumables", "Runic",
+    "Reborn", "Evolution", "Chronos", "Highroller",
+    "Resonance", "Breakthrough", "Exaltation", "Breaker",
+    "Shatterer", "Obliterator", "Reality Breaker",
+    "Eradicator", "Unboxing", "Quirky"
+}
+
+local autoAchievementSection = AchievementTab:CreateSector("Auto Claim 🏆", "left")
+local manualAchievementSection = AchievementTab:CreateSector("Manual Claim 🏆", "right")
+local achievementActive = {}
+
+autoAchievementSection:AddToggle("Auto Claim All", false, function(state)
+    for _, achievement in pairs(achievements) do
+        achievementActive[achievement] = state
+    end
+    if state then
+        task.spawn(function()
+            while achievementActive[achievements[1]] do
+                for _, achievement in pairs(achievements) do
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClaimMastery"):FireServer(achievement)
+                    task.wait(0.1)
+                end
+                task.wait(1)
+            end
+        end)
+    end
+end)
+
+for _, achievement in pairs(achievements) do
+    achievementActive[achievement] = false
+    autoAchievementSection:AddToggle("Auto " .. achievement, false, function(state)
+        achievementActive[achievement] = state
+        if state then
+            task.spawn(function()
+                while achievementActive[achievement] do
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClaimMastery"):FireServer(achievement)
+                    task.wait(1)
+                end
+            end)
+        end
+    end)
+end
+
+manualAchievementSection:AddButton("Claim All", function()
+    for _, achievement in pairs(achievements) do
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClaimMastery"):FireServer(achievement)
+        task.wait(0.1)
+    end
+end)
+
+for _, achievement in pairs(achievements) do
+    manualAchievementSection:AddButton(achievement, function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClaimMastery"):FireServer(achievement)
+    end)
+end
+
+-- Tab 4
+local StatsTab = Window:CreateTab("Stats")
+local player = game:GetService("Players").LocalPlayer
+local Data = player:WaitForChild("Data")
+
+local statFolders = {
+    {name = "Currencies 💵", folder = "Currencies"},
+    {name = "Stats 📊", folder = "Stats"},
+    {name = "Items 🎒", folder = "Items"},
+    {name = "Mastery 🏅", folder = "Mastery"},
+    {name = "Obtained ✅", folder = "Obtained"},
+}
+
+for i, folderInfo in pairs(statFolders) do
+    local side = (i % 2 == 0) and "right" or "left"
+    local section = StatsTab:CreateSector(folderInfo.name, side)
+    local folder = Data:WaitForChild(folderInfo.folder)
+    local labels = {}
+    for _, child in pairs(folder:GetChildren()) do
+        local label = section:AddLabel(child.Name .. ": " .. formatNumber(child.Value))
+        labels[child.Name] = label
+    end
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            for _, child in pairs(folder:GetChildren()) do
+                if labels[child.Name] then
+                    labels[child.Name]:Set(child.Name .. ": " .. formatNumber(child.Value))
+                end
+            end
+        end
+    end)
+end
+
+-- Tab 5 Crates
+local CratesTab = Window:CreateTab("Crates")
+
+local crateOpenAmount = 1
+
+local crates = {
+    "Basic Crate",
+    "Golden Crate",
+    "Rainbow Crate",
+    "Galaxy Crate",
+}
+
+local chests = {
+    "Mini Chest",
+    "Mini Chest II",
+    "Mini Chest III",
+    "Mini Chest IV",
+}
+
+local crateSection = CratesTab:CreateSector("Crates 📦", "left")
+local chestSection = CratesTab:CreateSector("Chests 🎁", "right")
+
+local crateAmountToggle = crateSection:AddToggle("Open Amount", false, function() end)
+crateAmountToggle:AddSlider(0, 0, 140, 10, function(value)
+    crateOpenAmount = math.max(1, math.floor(value / 10))
+end)
+
+crateSection:AddTextbox("Or type amount", nil, function(value)
+    local num = tonumber(value)
+    if num then
+        crateOpenAmount = math.max(1, math.floor(num))
+    end
+end)
+
+for _, crate in pairs(crates) do
+    crateSection:AddButton("Open " .. crate, function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("OpenCrate"):FireServer(crate, crateOpenAmount)
+    end)
+end
+
+local chestAmountToggle = chestSection:AddToggle("Open Amount", false, function() end)
+chestAmountToggle:AddSlider(0, 0, 140, 10, function(value)
+    crateOpenAmount = math.max(1, math.floor(value / 10))
+end)
+
+chestSection:AddTextbox("Or type amount", nil, function(value)
+    local num = tonumber(value)
+    if num then
+        crateOpenAmount = math.max(1, math.floor(num))
+    end
+end)
+
+for _, chest in pairs(chests) do
+    chestSection:AddButton("Open " .. chest, function()
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("OpenCrate"):FireServer(chest, crateOpenAmount)
+    end)
+end
+
+-- Tab 6 Settings
+local SettingsTab = Window:CreateTab("Settings")
+
+local settingsSection = SettingsTab:CreateSector("Settings ⚙️", "left")
+
+local antiAFKActive = false
+settingsSection:AddToggle("Anti AFK", false, function(state)
+    antiAFKActive = state
+    if antiAFKActive then
+        task.spawn(function()
+            while antiAFKActive do
+                task.wait(60)
+                if antiAFKActive then
+                    local VirtualUser = game:GetService("VirtualUser")
+                    VirtualUser:Jump()
+                end
+            end
+        end)
+    end
+end)
+
+local infoSection = SettingsTab:CreateSector("Info ℹ️", "right")
+infoSection:AddLabel("Anti AFK: Jumps every 60s")
+infoSection:AddLabel("to prevent idle kick")
+infoSection:AddLabel("UI Key: RightControl")
