@@ -2182,7 +2182,7 @@ function library:CreateWindow(name, size, hidebutton)
                 end)
 
                 function slider:Refresh()
-                    local percent = math.clamp(mouse.X - slider.Main.AbsolutePosition.X, 0, slider.Main.AbsoluteSize.X
+                    local percent = math.clamp(mouse.X - slider.Main.AbsolutePosition.X, 0, slider.Main.AbsoluteSize.X) / slider.Main.AbsoluteSize.X
 					local value = math.floor((slider.min + (slider.max - slider.min) * percent) * slider.decimals) / slider.decimals
 					value = math.clamp(value, slider.min, slider.max)
 					slider:Set(value)
