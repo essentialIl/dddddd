@@ -2182,11 +2182,10 @@ function library:CreateWindow(name, size, hidebutton)
                 end)
 
                 function slider:Refresh()
-                    local mousePos = camera:WorldToViewportPoint(mouse.Hit.p)
-                    local percent = math.clamp(mousePos.X - slider.SlideBar.AbsolutePosition.X, 0, slider.Main.AbsoluteSize.X) / slider.Main.AbsoluteSize.X
-                    local value = math.floor((slider.min + (slider.max - slider.min) * percent) * slider.decimals) / slider.decimals
-                    value = math.clamp(value, slider.min, slider.max)
-                    slider:Set(value)
+                    local percent = math.clamp(mouse.X - slider.Main.AbsolutePosition.X, 0, slider.Main.AbsoluteSize.X
+					local value = math.floor((slider.min + (slider.max - slider.min) * percent) * slider.decimals) / slider.decimals
+					value = math.clamp(value, slider.min, slider.max)
+					slider:Set(value)
                 end
 
                 slider.SlideBar.InputBegan:Connect(function(input)
